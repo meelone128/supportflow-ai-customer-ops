@@ -124,9 +124,3 @@ GitHub Actions runs `make quality` on pull requests and pushes to the default br
 Run `python -m supportflow.run_retrieval_experiment` for the local TF-IDF baseline. Add `--with-bailian` only when you intend to send the demo knowledge corpus and the 19 retrieval evaluation queries to configured Bailian embeddings; the JSON report distinguishes real semantic retrieval from automatic local fallback.
 
 The first recorded experiment is [`evals/reports/retrieval-comparison-2026-08-08.md`](evals/reports/retrieval-comparison-2026-08-08.md). It documents why the local baseline currently wins on the small, keyword-heavy corpus; semantic retrieval remains configurable rather than being assumed superior.
-
-## Interview framing
-
-This is not a “several prompts talking to each other” demo. The product boundary is risk-controlled ticket resolution: state transitions are explicit, every reply has retrievable evidence, the model has no direct action permission, and human decisions are persisted for audit and future evaluation.
-
-For a demo script, resume bullets, architecture diagram, and interview answers grounded in the current implementation, read [`docs/INTERVIEW_PLAYBOOK.md`](docs/INTERVIEW_PLAYBOOK.md).

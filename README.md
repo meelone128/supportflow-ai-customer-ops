@@ -21,7 +21,7 @@ python -m uvicorn supportflow.api:app --host 127.0.0.1 --port 8765
 - 客户入口：`http://127.0.0.1:8765/customer`
 - API 文档：`http://127.0.0.1:8765/docs`
 
-完整架构、评测、部署与面试说明见 [supportflow/README.md](supportflow/README.md)。
+完整架构、评测与部署说明见 [supportflow/README.md](supportflow/README.md)。
 
 ## 线上演示
 
