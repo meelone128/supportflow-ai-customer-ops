@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupportFlow 客户服务</title>
+  <style>
+    :root { font-family: Inter, "Microsoft YaHei", sans-serif; color: #15233d; background: #f5f7fb; }
+    * { box-sizing: border-box; } body { margin: 0; } main { width: min(760px, calc(100% - 32px)); margin: 0 auto; padding: 64px 0; }
+    .brand { color: #315efb; font-weight: 800; letter-spacing: .2px; } h1 { font-size: 34px; margin: 12px 0 8px; } p { line-height: 1.65; color: #60708b; }
+    .card { margin-top: 24px; padding: 26px; background: #fff; border: 1px solid #dfe6f1; border-radius: 16px; box-shadow: 0 10px 30px #17254a0c; }
+    label { display: block; margin: 18px 0 7px; font-weight: 700; font-size: 14px; } input, select, textarea, button { width: 100%; font: inherit; }
+    input, select, textarea { padding: 11px 12px; border: 1px solid #c9d5e6; border-radius: 9px; color: #15233d; background: #fff; } textarea { min-height: 140px; resize: vertical; }
+    button { margin-top: 18px; padding: 12px 16px; border: 0; border-radius: 9px; background: #315efb; color: #fff; font-weight: 750; cursor: pointer; } button:disabled { background: #aeb9ca; cursor: not-allowed; }
+    #result { display: none; margin-top: 20px; padding: 16px; border-radius: 10px; background: #f6f8fc; } #result.visible { display: block; } #result p { margin: 7px 0; } .ticket-id { color: #60708b; font-size: 13px; } .reply { margin-top: 12px; padding: 12px; color: #15233d; background: #fff; border: 1px solid #dfe6f1; border-radius: 8px; white-space: pre-wrap; }
+    .note { margin-top: 22px; font-size: 13px; } @media (max-width: 600px) { main { padding-top: 34px; } .card { padding: 20px; } h1 { font-size: 28px; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">SupportFlow</div>
+    <h1>您好，有什么可以帮您？</h1>
+    <p>提交后，系统会先分析问题；需要人工确认或存在风险时，会由客服专员继续处理。</p>
+
+    <section class="card">
+      <form id="customer-form">
+        <label for="customer-id">您的联系方式或客户编号</label>
+        <input id="customer-id" required minlength="2" maxlength="80" placeholder="例如：13800138000 或 C-10086">
+        <label for="subject">问题主题</label>
+        <select id="issue-type" onchange="toggleOtherSubject()">
+          <option value="退款咨询">退款与售后</option>
+          <option value="账户与登录">账户与登录</option>
+          <option value="产品问题">产品使用与故障</option>
+          <option value="其他">其他问题</option>
+        </select>
+        <div id="other-subject-wrap" hidden>
+          <label for="other-subject">问题主题</label>
+          <input id="other-subject" maxlength="120" placeholder="请简要概括您的问题">
+        </div>
+        <label for="content">请描述您遇到的问题</label>
+        <textarea id="content" required maxlength="4000" placeholder="例如：订单 ORD-1001 的退款什么时候到账？"></textarea>
+        <button id="submit" type="submit">提交咨询</button>
+      </form>
+      <div id="result" aria-live="polite"></div>
+    </section>
+    <p class="note">为保护客户信息，客户页面只展示处理进度与已确认回复，不展示内部知识、模型推理或审核记录。</p>
+  </main>
+  <script>
+    const byId = id => document.getElementById(id);
+    let activeTicketId = null;
+    let activeCustomerId = null;
+    let activeAccessToken = null;
+    let pollingTimer = null;
+
+    function toggleOtherSubject() {
+      const isOther = byId("issue-type").value === "其他";
+      byId("other-subject-wrap").hidden = !isOther;
+      byId("other-subject").required = isOther;
+      if (!isOther) byId("other-subject").value = "";
+    }
+
+    function showResult(data) {
+      const result = byId("result");
+      result.classList.add("visible");
+      result.innerHTML = `<p class="ticket-id">工单编号：${data.ticket_id}</p><p><strong>${data.message}</strong></p>${data.reply ? `<div class="reply">${escapeHtml(data.reply)}</div>` : ""}`;
+    }
+    function escapeHtml(value) { const box = document.createElement("div"); box.textContent = value || ""; return box.innerHTML; }
+    async function pollTicket() {
+      if (!activeTicketId || !activeAccessToken) return;
+      const response = await fetch(`/customer/tickets/${encodeURIComponent(activeTicketId)}?access_token=${encodeURIComponent(activeAccessToken)}`);
+      if (!response.ok) return;
+      const data = await response.json(); showResult(data);
+      if (["processing", "pending_approval"].includes(data.status)) pollingTimer = window.setTimeout(pollTicket, 2500);
+    }
+    byId("customer-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (pollingTimer) window.clearTimeout(pollingTimer);
+      const button = byId("submit"); button.disabled = true; button.textContent = "正在提交…";
+      try {
+        activeCustomerId = byId("customer-id").value.trim();
+        const response = await fetch("/customer/tickets", {
+          method: "POST", headers: {"Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID()},
+          body: JSON.stringify({customer_id: activeCustomerId, subject: byId("issue-type").value === "其他" ? byId("other-subject").value.trim() : byId("issue-type").value, content: byId("content").value.trim()}),
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "提交失败，请稍后重试。");
+        activeTicketId = data.ticket_id; activeAccessToken = data.access_token; showResult(data); pollingTimer = window.setTimeout(pollTicket, 800);
+      } catch (error) { showResult({ticket_id: "—", message: error.message}); }
+      finally { button.disabled = false; button.textContent = "提交咨询"; }
+    });
+  </script>
+</body>
+</html>

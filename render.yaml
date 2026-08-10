@@ -1,0 +1,38 @@
+# Public portfolio demo topology for Render.
+#
+# It deliberately uses the in-process dispatcher: Render's free plan is available
+# to web services but not background workers. The production-shaped Redis/Celery
+# topology remains available in docker-compose.yml for local / paid deployments.
+services:
+  - type: web
+    name: supportflow-demo
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: singapore
+    healthCheckPath: /healthz
+    envVars:
+      - key: SUPPORTFLOW_DATA_DIR
+        value: /tmp/supportflow
+      - key: SUPPORTFLOW_TASK_BACKEND
+        value: local
+      - key: SUPPORTFLOW_DATABASE_URL
+        fromDatabase:
+          name: supportflow-db
+          property: connectionString
+      - key: SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER
+        value: "false"
+      - key: SUPPORTFLOW_RETRIEVAL_MODE
+        value: local
+      - key: SUPPORTFLOW_JWT_SECRET
+        generateValue: true
+      - key: SUPPORTFLOW_INTEGRATION_KEY
+        generateValue: true
+
+databases:
+  - name: supportflow-db
+    databaseName: supportflow
+    user: supportflow
+    plan: free
+    region: singapore

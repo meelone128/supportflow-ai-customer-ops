@@ -1,0 +1,23 @@
+name: SupportFlow quality gate
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  deterministic-quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      LANGCHAIN_TRACING_V2: "false"
+      LANGSMITH_TRACING: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deterministic test dependencies
+        run: python -m pip install --upgrade pip && pip install -r .github/ci-requirements.txt
+      - name: Run SupportFlow quality gate
+        run: make quality

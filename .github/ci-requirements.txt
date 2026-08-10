@@ -1,0 +1,6 @@
+fastapi>=0.115,<1
+httpx>=0.28,<1
+langgraph>=0.2.19,<1
+openai>=2.53,<3
+python-dotenv>=1,<2
+typing-extensions>=4.12,<5

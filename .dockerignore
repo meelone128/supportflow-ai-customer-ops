@@ -1,0 +1,9 @@
+.git
+.github
+.vscode
+__pycache__
+**/__pycache__
+*.py[cod]
+.dev.env
+.env
+data

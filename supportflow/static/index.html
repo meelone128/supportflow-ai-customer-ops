@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupportFlow · AI 客服工单工作台</title>
+  <style>
+    :root { font-family: Inter, "Microsoft YaHei", sans-serif; color: #15233d; background: #f5f7fb; }
+    * { box-sizing: border-box; } body { margin: 0; } main { max-width: 1400px; margin: 0 auto; padding: 24px 20px 56px; }
+    h1, h2, h3, p { margin-top: 0; } h1 { margin-bottom: 5px; } h2 { font-size: 22px; } h3 { font-size: 16px; }
+    .sub, .muted { color: #60708b; } .sub { margin-bottom: 20px; } .topbar { display: flex; justify-content: space-between; gap: 16px; align-items: start; }
+    .role { width: 300px; } .role label { margin: 0; } .dashboard { display: grid; grid-template-columns: repeat(7, minmax(135px, 1fr)); gap: 12px; margin-bottom: 18px; }
+    .account-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; color: #60708b; font-size: 12px; } .account-summary button { padding: 7px 10px; font-size: 12px; white-space: nowrap; }
+    #auth-panel { display: none; max-width: 420px; margin: 0 0 18px auto; padding: 18px; } #auth-panel.auth-open { display: block; } #auth-panel h3 { margin-bottom: 6px; } #auth-panel .actions { margin-top: 12px; } #auth-panel .danger { display: none; } #auth-panel[data-authenticated="true"] .danger { display: inline-block; } #auth-panel[data-authenticated="true"] .actions button:first-child { display: none; }
+    #experiment-view { margin: 0 0 18px; } .experiment-grid { display: grid; grid-template-columns: repeat(3, minmax(220px, 1fr)); gap: 16px; } .experiment-metric { font-size: 30px; font-weight: 760; margin: 8px 0; } .experiment-delta { color: #197244; font-weight: 700; } .experiment-note { margin-top: 12px; padding: 10px; border-radius: 8px; background: #f6f8fc; color: #60708b; font-size: 13px; line-height: 1.55; }
+    .ticket-records-trigger { margin-top: 14px; width: 100%; } .ticket-records-modal { position: fixed; inset: 0; z-index: 20; display: none; align-items: center; justify-content: center; padding: 20px; background: #15233d66; } .ticket-records-modal.open { display: flex; } .ticket-records-dialog { width: min(720px, 100%); max-height: min(760px, calc(100vh - 40px)); overflow: auto; padding: 20px; background: #fff; border-radius: 14px; box-shadow: 0 20px 60px #15233d55; } .ticket-records-dialog .section { margin-top: 0; padding-top: 0; border-top: 0; } .ticket-records-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; } .ticket-records-head h3 { margin: 0; } .ticket-records-head button { background: #e9eef8; color: #53647d; } #ticket-records-modal #queue { max-height: 360px; overflow-y: auto; padding-right: 4px; }
+    .layout { display: grid; grid-template-columns: 260px minmax(460px, 1fr) 300px; gap: 16px; align-items: start; }
+    .panel, .metric { background: #fff; border: 1px solid #dfe6f1; border-radius: 12px; box-shadow: 0 4px 16px #17254a0a; }
+    .panel { padding: 16px; } .metric { padding: 14px; min-height: 92px; } .metric span { color: #60708b; font-size: 12px; } .metric b { display: block; margin-top: 6px; font-size: 22px; } .metric small { display: block; margin-top: 5px; color: #60708b; font-size: 11px; line-height: 1.35; } .metric.warn { border-color: #f1c66c; background: #fffaf0; } .metric.warn small { color: #966000; } .metric.alert { border-color: #eca5af; background: #fff5f6; } .metric.alert small { color: #a32537; }
+    label { display: block; margin: 12px 0 6px; font-size: 13px; font-weight: 650; } input, textarea, select, button { width: 100%; font: inherit; }
+    input, textarea, select { border: 1px solid #c9d5e6; border-radius: 8px; padding: 9px; background: #fff; color: #15233d; } textarea { min-height: 86px; resize: vertical; }
+    button { width: auto; border: 0; border-radius: 8px; padding: 10px 14px; background: #315efb; color: #fff; cursor: pointer; font-weight: 700; } button:hover { background: #244de0; } button:disabled { background: #aeb9ca; cursor: not-allowed; } button.danger { background: #b52f43; }
+    .section { border-top: 1px solid #e9eef6; margin-top: 18px; padding-top: 16px; } .ticket, .document { border: 1px solid #dfe6f1; border-radius: 9px; padding: 10px; margin: 8px 0; }
+    .ticket { cursor: pointer; } .ticket:hover { border-color: #315efb; background: #f8faff; } .ticket b, .document b { font-size: 13px; }
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .meta div { background: #f6f8fc; border-radius: 8px; padding: 9px; font-size: 13px; }
+    .badge { display: inline-block; padding: 3px 7px; border-radius: 99px; background: #fff2cf; color: #875700; font-size: 12px; } .risk-high { background: #fde6e9; color: #a32537; }
+    .actions { display: flex; flex-wrap: wrap; gap: 8px; } .actions button { flex: 1; min-width: 130px; } ul, ol { padding-left: 20px; } li { margin: 7px 0; }
+    .trace-item { font-size: 13px; } .trace-meta { display: block; margin-top: 3px; color: #60708b; font-size: 12px; } details { margin-top: 7px; } summary { cursor: pointer; color: #315efb; font-size: 13px; } .evidence-full { margin: 7px 0 0; padding: 9px; border-radius: 7px; background: #f6f8fc; white-space: pre-wrap; font-size: 13px; line-height: 1.55; }
+    .status { min-height: 20px; margin-top: 9px; color: #197244; font-size: 13px; } .status.error { color: #b52f43; } #empty { padding: 42px 12px; text-align: center; color: #60708b; }
+    @media (max-width: 1180px) { .dashboard { grid-template-columns: repeat(4, 1fr); } .layout { grid-template-columns: 280px 1fr; } .knowledge { grid-column: span 2; } .experiment-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 720px) { main { padding: 16px 12px; } .topbar { display: block; } .role { width: 100%; margin: 14px 0; } .dashboard, .layout { grid-template-columns: 1fr; } .knowledge { grid-column: auto; } .meta { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="topbar">
+      <div><h1>SupportFlow</h1><p class="sub">企业客服工单 · 多 Agent 协同、人工审核与知识库运营</p></div>
+      <div class="role"><label for="actor-role">当前角色</label><select id="actor-role"><option value="customer_support">客服专员</option><option value="supervisor" selected>客服主管</option><option value="administrator">系统管理员</option></select><span id="role-hint" class="muted"></span></div>
+    </div>
+
+    <section class="panel" id="auth-panel"><h3>账号登录</h3><p class="muted">登录后使用 JWT 身份访问；未登录时使用本地角色权限。</p><label for="login-username">用户名</label><input id="login-username" placeholder="例如 supervisor"><label for="login-password">密码</label><input id="login-password" type="password" placeholder="输入密码"><div class="actions"><button onclick="login()">登录</button><button class="danger" onclick="logout()">退出登录</button></div><div id="auth-status" class="status"></div></section>
+
+    <section class="dashboard" id="quality-dashboard" aria-label="质量看板"></section>
+
+    <section id="experiment-view" aria-live="polite"></section>
+
+    <div class="layout" id="operations-view">
+      <section class="panel">
+        <h3>新建工单</h3>
+        <label for="subject">主题</label><input id="subject" value="退款咨询">
+        <label for="content">内容</label><textarea id="content">购买后可以退款吗？</textarea>
+        <button id="submit-ticket" onclick="submitTicket()">运行 Agent 工作流</button><div id="ticket-submit-status" class="status"></div>
+        <div class="section"><h3 id="queue-title">工单列表</h3>
+          <label for="ticket-status">状态</label><select id="ticket-status" onchange="refreshQueue()"><option value="">全部状态</option><option value="pending_approval">待人工审核</option><option value="escalated">已升级人工</option><option value="resolved">已解决</option><option value="failed">执行失败</option></select>
+          <label for="ticket-category">分类</label><select id="ticket-category" onchange="refreshQueue()"><option value="">全部分类</option><option value="refund_policy">退款政策</option><option value="account_access">账号权限</option><option value="product_issue">产品故障</option><option value="unknown">待人工判断</option></select>
+        <label for="ticket-risk">风险</label><select id="ticket-risk" onchange="refreshQueue()"><option value="">全部风险</option><option value="low">低风险</option><option value="medium">中风险</option><option value="high">高风险</option></select>
+          <label for="ticket-search">搜索</label><input id="ticket-search" placeholder="工单编号、主题、正文或客户标识" oninput="scheduleQueueRefresh()">
+          <div id="queue"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="detail"><div id="empty">从左侧新建或选择一张工单，查看 AI 决策依据。</div></section>
+
+      <section class="panel knowledge">
+        <h3>发布知识文档</h3>
+        <p class="muted">管理员发布后自动重建检索索引；同一来源编号会生成新版本。</p>
+        <label for="knowledge-source">来源编号</label><input id="knowledge-source" value="KB-" placeholder="例如 KB-ORDER-001">
+        <label for="knowledge-title">标题</label><input id="knowledge-title" placeholder="例如 订单同步故障处理">
+        <label for="knowledge-category">分类</label><select id="knowledge-category"><option value="product_issue">产品故障</option><option value="refund_policy">退款政策</option><option value="account_access">账号权限</option></select>
+        <label for="knowledge-content">正文</label><textarea id="knowledge-content" placeholder="填写可以作为客服事实依据的政策或处理说明（至少 20 个字符）"></textarea>
+        <button id="publish-knowledge" onclick="publishKnowledge()">发布并重建索引</button><div id="knowledge-status" class="status"></div>
+        <div class="section"><h3>回滚知识版本</h3><p class="muted">恢复历史版本时会生成新版本，不会覆盖原有记录。</p><label for="restore-source">来源编号</label><input id="restore-source" placeholder="例如 KB-ORDER-001"><label for="restore-version">历史版本</label><input id="restore-version" placeholder="例如 v1"><button onclick="restoreKnowledge()">恢复此版本</button><div id="restore-status" class="status"></div></div>
+        <div class="section"><h3>待补充知识</h3><p class="muted">由人工负向反馈自动归因；发布知识后进入待验证，而非直接关闭。</p><div id="knowledge-gaps"></div></div>
+        <div class="section"><h3>知识优化效果</h3><p class="muted">按知识发布时点比较前后同类工单；反馈样本不足时不输出优化结论。</p><div id="knowledge-outcomes"></div></div>
+        <div class="section"><h3>知识操作审计</h3><div id="knowledge-audit"></div></div>
+        <div class="section"><h3>已发布文档</h3><div id="knowledge-list"></div></div>
+      </section>
+    </div>
+
+  </main>
+
+  <script>
+    let activeTicket;
+    let accessToken = sessionStorage.getItem("supportflow_access_token");
+    const byId = id => document.getElementById(id);
+    const text = value => value ?? "—";
+    const esc = value => String(value ?? "").replace(/[&<>'"]/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[char]));
+    const agentName = {triage_agent:"分流 Agent", knowledge_agent:"知识 Agent", resolution_agent:"处置 Agent", quality_agent:"质检 Agent", orchestrator:"编排器"};
+    const categoryName = {account_access:"账号权限", product_issue:"产品故障", refund_policy:"退款政策", unknown:"待人工判断"};
+    const riskName = {low:"低风险", medium:"中风险", high:"高风险"};
+    const statusName = {processing:"处理中", pending_approval:"待人工审核", escalated:"已升级人工", resolved:"已解决", failed:"执行失败"};
+    const modeName = {template:"安全模板", template_fallback:"安全模板降级", deepseek:"DeepSeek", openai:"OpenAI", bailian_semantic:"百炼语义检索", local_tfidf:"本地关键词检索", local_tfidf_fallback:"本地检索降级", not_applicable:"不适用"};
+    const role = () => byId("actor-role").value;
+    const percent = value => `${Math.round((value || 0) * 100)}%`;
+    let queueRefreshTimer;
+
+    function setupAuthExperience() {
+      const rolePanel = document.querySelector(".role");
+      rolePanel.insertAdjacentHTML("beforeend", '<div class="account-summary"><span id="account-summary">本地模式：可直接切换角色</span><button id="auth-toggle" onclick="toggleAuthPanel()">账号登录</button></div>');
+      const panel = byId("auth-panel");
+      panel.dataset.authenticated = accessToken ? "true" : "false";
+    }
+
+    function toggleAuthPanel() { byId("auth-panel").classList.toggle("auth-open"); }
+
+    function setAuthPresentation(authenticated, profile) {
+      const panel = byId("auth-panel");
+      panel.dataset.authenticated = authenticated ? "true" : "false";
+      panel.classList.remove("auth-open");
+      byId("account-summary").textContent = authenticated ? `已登录：${profile.actor_id}（${profile.role}）` : "本地模式：可直接切换角色";
+      byId("auth-toggle").textContent = authenticated ? "切换账号" : "账号登录";
+    }
+
+    function canApprove(ticket) { return role() !== "customer_support" || ticket.triage.risk_level === "low"; }
+    function canManageKnowledge() { return role() === "administrator"; }
+    function canResume() { return role() !== "customer_support"; }
+
+    function refreshRoleExperience() {
+      const descriptions = {customer_support:"可处理低风险工单、提交反馈", supervisor:"可审批中风险工单、查看指标与恢复失败工单", administrator:"拥有主管权限，并可发布知识文档"};
+      byId("role-hint").textContent = descriptions[role()];
+      const publish = byId("publish-knowledge");
+      publish.disabled = !canManageKnowledge();
+      if (!canManageKnowledge()) { byId("knowledge-status").className = "status"; byId("knowledge-status").textContent = "知识发布仅限系统管理员。"; }
+      else if (byId("knowledge-status").textContent === "知识发布仅限系统管理员。") byId("knowledge-status").textContent = "";
+      if (activeTicket) render(activeTicket);
+    }
+
+    function readableTrace(message) {
+      if (message.startsWith("category=")) { const [category, risk] = message.split(";").map(part => part.split("=")[1]); return `识别为「${categoryName[category] || category}」，风险等级为「${riskName[risk] || risk}」`; }
+      if (message.startsWith("evidence=")) return `检索到 ${message.split("=")[1]} 条可引用证据`;
+      if (message.startsWith("draft=")) return message.includes("draft=True") ? "已生成待审核回复草稿" : "证据不足，未生成回复草稿";
+      if (message.startsWith("outcome=")) return `质检结论：${statusName[message.split("=")[1]] || message.split("=")[1]}`;
+      return message;
+    }
+
+    function readableMetadata(metadata) {
+      return Object.entries(metadata || {}).map(([key, value]) => {
+        const label = {retrieval_mode:"检索方式", generation_mode:"生成方式", model:"模型", prompt_version:"提示词版本"}[key] || key;
+        return `${label}：${modeName[value] || value}`;
+      }).join(" · ");
+    }
+
+    function excerptPreview(value, limit = 96) {
+      const compact = String(value || "").replace(/\s+/g, " ").trim();
+      return compact.length > limit ? `${compact.slice(0, limit)}…` : compact;
+    }
+
+    function formatError(detail) {
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) return detail.map(item => {
+        if ((item.msg || "").includes("at least 20 characters")) return "正文至少需要 20 个字符";
+        if ((item.msg || "").includes("at least 1 character")) return "主题和内容不能为空";
+        if ((item.msg || "").includes("Field required")) return "请填写必填项";
+        return item.msg || "输入不符合要求";
+      }).join("；");
+      if (detail && typeof detail === "object") return detail.message || "请求参数不符合要求";
+      return "请求失败，请稍后重试";
+    }
+
+    async function api(path, options = {}) {
+      const identityHeader = accessToken ? {Authorization: `Bearer ${accessToken}`} : {"X-Actor-Role": role()};
+      const response = await fetch(path, {...options, headers: {...(options.headers || {}), ...identityHeader}});
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(formatError(body.detail));
+      return body;
+    }
+
+    function applyProfile(profile) {
+      setAuthPresentation(true, profile);
+      byId("actor-role").value = profile.role;
+      byId("actor-role").disabled = true;
+      byId("auth-status").className = "status";
+      byId("auth-status").textContent = `已登录：${profile.actor_id}（${profile.role}）`;
+      refreshRoleExperience();
+    }
+
+    async function login() {
+      const status = byId("auth-status");
+      try {
+        const response = await fetch("/auth/token", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({username:byId("login-username").value.trim(), password:byId("login-password").value})});
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(formatError(body.detail));
+        accessToken = body.access_token; sessionStorage.setItem("supportflow_access_token", accessToken);
+        applyProfile(await api("/auth/me"));
+        await refreshMetrics(); await refreshKnowledge(); await refreshQueue();
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+    }
+
+    function logout() {
+      setAuthPresentation(false, {});
+      accessToken = null; sessionStorage.removeItem("supportflow_access_token");
+      byId("actor-role").disabled = false;
+      byId("auth-status").className = "status"; byId("auth-status").textContent = "已退出登录，当前使用本地角色权限。";
+      refreshRoleExperience(); refreshMetrics(); refreshKnowledge(); refreshQueue();
+    }
+
+    async function refreshMetrics() {
+      try {
+        const metrics = await api("/metrics");
+        const fallbackCount = metrics.retrieval_mode_counts.local_tfidf_fallback || 0;
+        const items = [
+          ["工单总数", metrics.ticket_count, "", ""],
+          ["证据覆盖率", percent(metrics.evidence_coverage), metrics.evidence_coverage < 0.8 ? "alert" : "", metrics.evidence_coverage < 0.8 ? "低于 80%，请补充或修订知识库" : "证据引用正常"],
+          ["升级率", percent(metrics.escalation_rate), metrics.escalation_rate > 0.5 ? "warn" : "", metrics.escalation_rate > 0.5 ? "升级比例偏高，建议检查风险规则" : "处于可观察范围"],
+          ["人工改写率", percent(metrics.human_edit_rate), "", metrics.human_edit_rate ? "已发生人工修订，建议结合反馈复盘" : "尚无人工修订"],
+          ["负向反馈率", percent(metrics.negative_feedback_rate), metrics.negative_feedback_rate > 0.1 ? "alert" : "", metrics.feedback_count ? (metrics.negative_feedback_rate > 0.1 ? "负向反馈偏高，优先抽样复盘" : "人工反馈健康") : "暂无人工反馈样本"],
+          ["待验证知识缺口", metrics.knowledge_gap_count || 0, metrics.knowledge_gap_count ? "warn" : "", metrics.knowledge_gap_count ? "由人工负向反馈归因，需补充知识后验证" : "暂无待处理知识缺口"],
+          ["P95 延迟", `${metrics.latency_ms.p95} ms`, metrics.latency_ms.p95 > 2500 ? "alert" : metrics.latency_ms.p95 > 1200 ? "warn" : "", metrics.latency_ms.p95 > 2500 ? "延迟过高，检查模型/检索依赖" : metrics.latency_ms.p95 > 1200 ? "延迟偏高，建议关注外部模型调用" : "响应延迟正常"],
+          ["检索降级次数", fallbackCount, fallbackCount ? "warn" : "", fallbackCount ? "已降级到本地检索，请检查向量服务" : "未发生检索降级"],
+        ];
+        byId("quality-dashboard").innerHTML = items.map(([label, value, level, note]) => `<div class="metric ${esc(level)}"><span>${esc(label)}</span><b>${esc(value)}</b>${note ? `<small>${esc(note)}</small>` : ""}</div>`).join("");
+      } catch (error) { byId("quality-dashboard").innerHTML = `<div class="metric"><span>质量看板</span><b class="muted">仅主管/管理员可查看</b></div>`; }
+    }
+
+    async function refreshQueue() {
+      const params = new URLSearchParams();
+      [["status", byId("ticket-status").value], ["category", byId("ticket-category").value], ["risk_level", byId("ticket-risk").value], ["q", byId("ticket-search").value.trim()]].forEach(([key, value]) => { if (value) params.set(key, value); });
+      const tickets = await api(`/tickets${params.size ? `?${params}` : ""}`);
+      byId("queue-title").textContent = `工单列表（${tickets.length}）`;
+      byId("queue").innerHTML = tickets.length ? tickets.map(ticket => `<div class="ticket ${activeTicket?.ticket.id === ticket.ticket.id ? "active" : ""}" onclick="loadTicket('${esc(ticket.ticket.id)}')"><b>${esc(ticket.ticket.subject)}</b><br><span class="muted">${esc(ticket.ticket.id)} · ${esc(categoryName[ticket.triage.category] || ticket.triage.category)} · ${esc(statusName[ticket.status] || ticket.status)}</span></div>`).join("") : '<p class="muted">没有符合筛选条件的工单</p>';
+    }
+
+    function scheduleQueueRefresh() { clearTimeout(queueRefreshTimer); queueRefreshTimer = setTimeout(refreshQueue, 250); }
+
+    function setupTicketRecordsModal() {
+      const section = byId("queue-title").parentElement;
+      const trigger = document.createElement("button");
+      trigger.id = "ticket-records-trigger";
+      trigger.className = "ticket-records-trigger";
+      trigger.textContent = "查看工单记录";
+      trigger.onclick = openTicketRecords;
+      section.parentElement.insertBefore(trigger, section);
+
+      const modal = document.createElement("div");
+      modal.id = "ticket-records-modal";
+      modal.className = "ticket-records-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-label", "工单记录");
+      modal.innerHTML = '<div class="ticket-records-dialog"><div class="ticket-records-head"><h3>工单记录</h3><button type="button" onclick="closeTicketRecords()">关闭</button></div></div>';
+      modal.addEventListener("click", event => { if (event.target === modal) closeTicketRecords(); });
+      modal.querySelector(".ticket-records-dialog").append(section);
+      document.body.append(modal);
+      document.addEventListener("keydown", event => { if (event.key === "Escape") closeTicketRecords(); });
+    }
+
+    function openTicketRecords() { byId("ticket-records-modal").classList.add("open"); }
+    function closeTicketRecords() { byId("ticket-records-modal")?.classList.remove("open"); }
+
+    async function refreshKnowledge() {
+      const documents = await api("/knowledge/documents");
+      byId("knowledge-list").innerHTML = documents.length ? documents.map(doc => `<div class="document"><b>${esc(doc.title)}</b><br><span class="muted">${esc(doc.source_id)} · ${esc(categoryName[doc.category] || doc.category)} · ${esc(doc.version || "baseline")}</span></div>`).join("") : '<p class="muted">暂无已发布文档</p>';
+      try {
+        const gaps = await api("/knowledge/gaps");
+        const outcomes = await api("/knowledge/gap-outcomes");
+        const audit = await api("/knowledge/audit");
+        const labelName = {needs_edit:"需要改写", incorrect:"事实不准确", unsafe:"不安全"};
+        byId("knowledge-gaps").innerHTML = gaps.length ? gaps.map(gap => `<div class="document"><b>${esc(categoryName[gap.category] || gap.category)} · ${gap.status === "verification" ? "待验证" : "待补充"}</b><br><span class="muted">${esc(gap.count)} 条反馈 · ${esc(Object.keys(gap.labels).map(label => labelName[label] || label).join("、"))}</span><br><span class="muted">${esc(gap.recommendation)}</span></div>`).join("") : '<p class="muted">暂无待处理知识缺口</p>';
+        byId("knowledge-outcomes").innerHTML = outcomes.length ? outcomes.map(outcome => {
+          const baseline = outcome.baseline, after = outcome.after;
+          const verdict = outcome.verdict === "ready_for_comparison" ? `可比较：负向反馈率 ${percent(baseline.negative_feedback_rate)} → ${percent(after.negative_feedback_rate)}` : `样本不足：发布前 ${baseline.feedback_count} / 发布后 ${after.feedback_count} 条反馈，至少各需 ${outcome.minimum_feedback_samples} 条`;
+          const assessmentName = {improved:"效果改善", regressed:"需要复盘", neutral:"效果持平", insufficient_sample:"继续收集样本", insufficient_attribution:"归因不足"};
+          return `<div class="document"><b>${esc(categoryName[outcome.category] || outcome.category)} · ${esc(verdict)}</b><br><span class="muted">${esc(assessmentName[outcome.assessment.status] || outcome.assessment.status)}：${esc(outcome.assessment.recommendation)}</span><br><span class="muted">来源 ${esc(outcome.source_id)} · 发布后引用覆盖 ${percent(after.evaluated_source_citation_rate)} · 升级率 ${percent(baseline.escalation_rate)} → ${percent(after.escalation_rate)}</span></div>`;
+        }).join("") : '<p class="muted">暂无进入验证期的知识缺口</p>';
+        const actionName = {publish:"发布", restore:"恢复历史版本"};
+        byId("knowledge-audit").innerHTML = audit.length ? audit.slice(0, 8).map(item => `<div class="document"><b>${esc(actionName[item.action] || item.action)} · ${esc(item.source_id)} ${esc(item.version)}</b><br><span class="muted">${esc(item.actor_id)}（${esc(item.actor_role)}）· ${esc(item.details.restored_from ? `恢复自 ${item.details.restored_from}` : "新版本发布")}</span></div>`).join("") : '<p class="muted">暂无知识操作记录</p>';
+      } catch (_) { byId("knowledge-gaps").innerHTML = '<p class="muted">仅主管或管理员可查看</p>'; byId("knowledge-outcomes").innerHTML = '<p class="muted">仅主管或管理员可查看</p>'; byId("knowledge-audit").innerHTML = '<p class="muted">仅主管或管理员可查看</p>'; }
+    }
+
+    async function waitForTicket(ticketId, status) {
+      const deadline = Date.now() + 30000;
+      while (Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 700));
+        const ticket = await api(`/tickets/${ticketId}`);
+        if (ticket.status !== "processing") return ticket;
+        render(ticket);
+        status.textContent = `工单 ${ticketId}：${ticket.progress?.message || "后台 Agent 正在处理"}。`;
+      }
+      throw new Error("后台处理仍在进行中，可在左侧工单列表稍后查看结果。");
+    }
+
+    async function submitTicket() {
+      const button = byId("submit-ticket"); const status = byId("ticket-submit-status");
+      const subject = byId("subject").value.trim(); const content = byId("content").value.trim();
+      status.className = "status";
+      if (!subject || !content) { status.className = "status error"; status.textContent = "请填写工单主题和内容。"; return; }
+      button.disabled = true; button.textContent = "已提交，后台处理中…";
+      try {
+        const processing = await api("/tickets", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({subject, content})});
+        render(processing); await refreshQueue(); await refreshMetrics();
+        status.textContent = `工单 ${processing.ticket.id} 已创建，正在后台处理。`;
+        const completed = await waitForTicket(processing.ticket.id, status);
+        render(completed); await refreshQueue(); await refreshMetrics();
+        status.textContent = `工单 ${completed.ticket.id} 处理完成：${statusName[completed.status] || completed.status}。`;
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+      finally { button.disabled = false; button.textContent = "运行 Agent 工作流"; }
+    }
+
+    async function submitTicketSyncLegacy() {
+      const button = byId("submit-ticket"); const status = byId("ticket-submit-status");
+      const subject = byId("subject").value.trim(); const content = byId("content").value.trim();
+      status.className = "status";
+      if (!subject || !content) { status.className = "status error"; status.textContent = "请填写工单主题和内容。"; return; }
+      button.disabled = true; button.textContent = "Agent 正在分析…"; status.textContent = "正在完成分流、检索、生成与质检，请稍候。";
+      try {
+        const ticket = await api("/tickets", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({subject, content})});
+        await refreshQueue(); await refreshMetrics(); render(ticket);
+        status.textContent = `工单 ${ticket.ticket.id} 已处理，当前状态：${statusName[ticket.status] || ticket.status}。`;
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+      finally { button.disabled = false; button.textContent = "运行 Agent 工作流"; }
+    }
+
+    async function loadTicket(id) { try { render(await api(`/tickets/${id}`)); closeTicketRecords(); await refreshQueue(); } catch (error) { alert(error.message); } }
+
+    function render(ticket) {
+      activeTicket = ticket;
+      const evidence = ticket.evidence.map(item => `<li><b>${esc(item.source_id)} · ${esc(item.title)}</b><span class="trace-meta">版本 ${esc(item.source_version || "baseline")} · 相关度 ${esc(item.score)}</span><span class="muted">${esc(excerptPreview(item.excerpt))}</span><details><summary>展开查看完整政策依据</summary><div class="evidence-full">${esc(item.excerpt)}</div></details></li>`).join("") || "<li>无：高风险工单不会进入检索。</li>";
+      const reasons = ticket.quality?.reasons?.map(item => `<li>${esc(item)}</li>`).join("") || "<li>暂无</li>";
+      const trace = ticket.trace.map(item => { const meta = readableMetadata(item.metadata); return `<li class="trace-item"><b>${esc(agentName[item.agent] || item.agent)}</b>：${esc(readableTrace(item.message))}${item.duration_ms !== null && item.duration_ms !== undefined ? `<span class="trace-meta">耗时 ${esc(item.duration_ms)} ms${meta ? ` · ${esc(meta)}` : ""}</span>` : ""}</li>`; }).join("");
+      const approval = ticket.status === "processing" ? `<p class="badge">当前状态：处理中</p><p class="muted">工单已安全保存。后台将依次完成分流、检索、回复生成与质检；此页面会自动刷新结果。</p>` : ticket.status === "pending_approval" ? `<label for="reply">可编辑回复</label><textarea id="reply">${esc(text(ticket.draft?.reply))}</textarea>${canApprove(ticket) ? "" : '<p class="muted">当前为中/高风险工单，需由客服主管或系统管理员批准。</p>'}<div class="actions"><button onclick="decide('approve')" ${canApprove(ticket) ? "" : "disabled"}>批准并发送</button><button class="danger" onclick="decide('escalate')">升级人工处理</button></div>` : ticket.status === "failed" ? `<p class="badge">当前状态：执行失败</p>${canResume() ? '<p class="muted">修复临时依赖后，可保留原始工单重新执行。</p><button onclick="resumeTicket()">恢复执行</button>' : '<p class="muted">失败工单仅主管或系统管理员可恢复。</p>'}` : `<p class="badge">当前状态：${esc(statusName[ticket.status] || ticket.status)}</p>`;
+      const feedback = ticket.feedback ? `<p class="badge">反馈：${esc(ticket.feedback.label)}</p><p class="muted">${esc(text(ticket.feedback.note))}</p>` : `<label for="feedback-label">审核反馈</label><select id="feedback-label"><option value="helpful">有帮助</option><option value="needs_edit">需要改写</option><option value="incorrect">事实不准确</option><option value="unsafe">不安全</option></select><label for="feedback-note">备注（可选）</label><textarea id="feedback-note"></textarea><button onclick="recordFeedback()">保存反馈</button>`;
+      const annotation = ["processing", "failed"].includes(ticket.status) ? '<p class="muted">工单处理完成后可进入独立评测标注。</p>' : `<p class="muted">独立标注不会触发知识缺口，用于后续 A/B 质量比较。</p><label for="annotation-label">评测标签</label><select id="annotation-label"><option value="helpful">有帮助</option><option value="needs_edit">需要改写</option><option value="incorrect">事实不准确</option><option value="unsafe">不安全</option></select><label for="annotation-note">标注备注（可选）</label><textarea id="annotation-note"></textarea><button onclick="recordAnnotation()">提交独立标注</button><div id="annotation-status" class="status"></div>`;
+      byId("detail").innerHTML = `<h2>${esc(ticket.ticket.subject)}</h2><div class="meta"><div>分类<br><b>${esc(categoryName[ticket.triage.category] || ticket.triage.category)}</b></div><div>风险<br><span class="badge ${ticket.triage.risk_level === "high" ? "risk-high" : ""}">${esc(riskName[ticket.triage.risk_level] || ticket.triage.risk_level)}</span></div><div>状态<br><b>${esc(statusName[ticket.status] || ticket.status)}</b></div></div><div class="section"><h3>建议动作</h3><p>${esc(text(ticket.draft?.proposed_action))}</p></div><div class="section"><h3>质检结果</h3><ul>${reasons}</ul></div><div class="section"><h3>检索证据</h3><ul>${evidence}</ul></div><div class="section"><h3>Agent 决策轨迹</h3><ol>${trace}</ol></div><div class="section">${approval}</div><div class="section"><h3>审核反馈</h3>${feedback}</div><div class="section"><h3>评测标注</h3>${annotation}</div>`;
+    }
+
+    async function decide(decision) {
+      try { const result = await api(`/tickets/${activeTicket.ticket.id}/approval`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({decision, edited_reply:byId("reply")?.value})}); render(result); await refreshQueue(); await refreshMetrics(); }
+      catch (error) { alert(error.message); }
+    }
+
+    async function recordFeedback() {
+      try { const result = await api(`/tickets/${activeTicket.ticket.id}/feedback`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({label:byId("feedback-label").value, note:byId("feedback-note").value})}); render(result); await refreshMetrics(); await refreshKnowledge(); }
+      catch (error) { alert(error.message); }
+    }
+
+    async function recordAnnotation() {
+      const status = byId("annotation-status");
+      try {
+        const result = await api(`/tickets/${activeTicket.ticket.id}/annotations`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({label:byId("annotation-label").value, note:byId("annotation-note").value})});
+        status.textContent = `已保存独立标注：${result.label}。`;
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+    }
+
+    async function resumeTicket() {
+      try { const result = await api(`/tickets/${activeTicket.ticket.id}/resume`, {method:"POST"}); render(result); await refreshQueue(); await refreshMetrics(); }
+      catch (error) { alert(error.message); }
+    }
+
+    async function publishKnowledge() {
+      const status = byId("knowledge-status"); status.className = "status"; status.textContent = "";
+      try {
+        const result = await api("/knowledge/documents", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({source_id:byId("knowledge-source").value.trim(), title:byId("knowledge-title").value.trim(), category:byId("knowledge-category").value, content:byId("knowledge-content").value.trim()})});
+        status.textContent = `已发布 ${result.source_id} ${result.version}，当前索引共 ${result.indexed_document_count} 篇文档；${result.knowledge_gaps_marked_for_verification} 个知识缺口进入待验证。`;
+        byId("knowledge-title").value = ""; byId("knowledge-content").value = ""; await refreshKnowledge(); await refreshMetrics();
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+    }
+
+    async function restoreKnowledge() {
+      const status = byId("restore-status"); status.className = "status"; status.textContent = "";
+      const sourceId = byId("restore-source").value.trim(); const version = byId("restore-version").value.trim();
+      if (!sourceId || !version) { status.className = "status error"; status.textContent = "请填写来源编号和历史版本。"; return; }
+      try {
+        const result = await api(`/knowledge/documents/${encodeURIComponent(sourceId)}/restore`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({version})});
+        status.textContent = `已将 ${result.source_id} 的 ${result.restored_from} 恢复为新版本 ${result.version}，索引已刷新。`;
+        byId("restore-version").value = ""; await refreshKnowledge();
+      } catch (error) { status.className = "status error"; status.textContent = error.message; }
+    }
+
+    const experimentCard = (title, content) => `<section class="panel"><h3>${esc(title)}</h3>${content}</section>`;
+
+    async function refreshExperimentCenter() {
+      const view = byId("experiment-view");
+      view.innerHTML = '<section class="panel"><p class="muted">正在读取已保存的实验报告…</p></section>';
+      try {
+        const report = await api("/experiments/center");
+        const knowledge = report.knowledge_update;
+        const routing = report.multilingual_routing;
+        const knowledgeContent = knowledge.available
+          ? `<p class="muted">退款进度知识更新 · ${esc(knowledge.blind_test_cases)} 条隔离盲测 · 防泄漏：${knowledge.leakage_check === "passed" ? "通过" : esc(knowledge.leakage_check)}</p><div class="experiment-metric">${percent(knowledge.before)} → ${percent(knowledge.after)}</div><p class="experiment-delta">首条目标意图命中率 ${knowledge.delta >= 0 ? "+" : ""}${percent(Math.abs(knowledge.delta))}</p><p class="experiment-note">在隔离盲测集中，检查检索结果的首条知识是否命中目标意图。<br>实验报告已生成，可在项目内追溯。</p>`
+          : `<p class="muted">尚未找到公开语料实验报告。运行数据构建命令后，此处才展示结果。</p>`;
+        const routingContent = routing.available
+          ? `<p class="muted">公开英文客服工单 · ${esc(routing.cases)} 条固定样本</p><div class="experiment-metric">${esc(routing.before_escalated)} → ${esc(routing.after_escalated)}</div><p class="experiment-delta">升级人工工单减少 ${esc(routing.before_escalated - routing.after_escalated)} 条；审核草稿 ${esc(routing.before_drafts)} → ${esc(routing.after_drafts)}</p><p class="experiment-note">未识别类别：${esc(routing.before_unknown)} → ${esc(routing.after_unknown)}<br>实验报告已生成，可在项目内追溯。</p>`
+          : `<p class="muted">尚未找到升级前后路由报告。运行 Kaggle 审计后，此处才展示结果。</p>`;
+        const safetyContent = routing.available
+          ? `<p class="muted">高优先级工单人工复核覆盖率</p><div class="experiment-metric">${percent(routing.high_priority_review_capture_before)} → ${percent(routing.high_priority_review_capture_after)}</div><p class="experiment-delta">英文能力补齐后，安全覆盖未下降</p><p class="experiment-note">该指标用于核对系统是否仍将高优先级工单送入人工复核；它衡量的是路由安全性，不代表模型安全能力的真实标签。</p>`
+          : `<p class="muted">安全审计报告尚不可用；页面不会以默认数值替代真实报告。</p>`;
+        view.innerHTML = `<div class="experiment-grid">${experimentCard("知识更新实验", knowledgeContent)}${experimentCard("多语言路由审计", routingContent)}${experimentCard("安全门禁", safetyContent)}</div>`;
+      } catch (_) {
+        view.innerHTML = '<section class="panel"><h3>实验中心</h3><p class="muted">仅客服主管或系统管理员可查看离线实验报告。</p></section>';
+      }
+    }
+
+    byId("actor-role").addEventListener("change", async () => { refreshRoleExperience(); await refreshMetrics(); await refreshKnowledge(); });
+    setupAuthExperience(); setupTicketRecordsModal(); refreshRoleExperience(); refreshQueue(); refreshKnowledge(); refreshMetrics(); refreshExperimentCenter(); if (accessToken) api("/auth/me").then(applyProfile).catch(logout); setInterval(refreshMetrics, 10000);
+  </script>
+</body>
+</html>

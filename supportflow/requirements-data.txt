@@ -1,0 +1,3 @@
+# Optional: only needed to build the public-data experiment corpus, not to run SupportFlow.
+datasets>=3,<5
+kagglehub>=0.3,<1

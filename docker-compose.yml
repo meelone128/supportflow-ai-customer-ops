@@ -1,0 +1,70 @@
+services:
+  supportflow:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8765:8000"
+    environment:
+      SUPPORTFLOW_DATA_DIR: /data
+      SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER: "${SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER:-true}"
+      SUPPORTFLOW_JWT_SECRET: "${SUPPORTFLOW_JWT_SECRET:-change-this-before-deployment}"
+      SUPPORTFLOW_INTEGRATION_KEY: "${SUPPORTFLOW_INTEGRATION_KEY:-supportflow-integration-demo}"
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      DASHSCOPE_API_KEY: "${DASHSCOPE_API_KEY:-}"
+      DASHSCOPE_BASE_URL: "${DASHSCOPE_BASE_URL:-}"
+      DASHSCOPE_WORKSPACE_ID: "${DASHSCOPE_WORKSPACE_ID:-}"
+      SUPPORTFLOW_RETRIEVAL_MODE: "${SUPPORTFLOW_RETRIEVAL_MODE:-local}"
+      SUPPORTFLOW_ORDER_API_BASE_URL: "${SUPPORTFLOW_ORDER_API_BASE_URL:-}"
+      SUPPORTFLOW_ORDER_API_TOKEN: "${SUPPORTFLOW_ORDER_API_TOKEN:-}"
+      SUPPORTFLOW_PROMPT_EXPERIMENT_ID: "${SUPPORTFLOW_PROMPT_EXPERIMENT_ID:-}"
+      SUPPORTFLOW_TASK_BACKEND: celery
+      SUPPORTFLOW_REDIS_URL: redis://redis:6379/0
+    volumes:
+      - ./data/supportflow:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: celery -A supportflow.celery_worker worker --loglevel=INFO
+    environment:
+      SUPPORTFLOW_DATA_DIR: /data
+      SUPPORTFLOW_TASK_BACKEND: celery
+      SUPPORTFLOW_REDIS_URL: redis://redis:6379/0
+      DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      DASHSCOPE_API_KEY: "${DASHSCOPE_API_KEY:-}"
+      DASHSCOPE_BASE_URL: "${DASHSCOPE_BASE_URL:-}"
+      DASHSCOPE_WORKSPACE_ID: "${DASHSCOPE_WORKSPACE_ID:-}"
+      SUPPORTFLOW_RETRIEVAL_MODE: "${SUPPORTFLOW_RETRIEVAL_MODE:-local}"
+      SUPPORTFLOW_ORDER_API_BASE_URL: "${SUPPORTFLOW_ORDER_API_BASE_URL:-}"
+      SUPPORTFLOW_ORDER_API_TOKEN: "${SUPPORTFLOW_ORDER_API_TOKEN:-}"
+    volumes:
+      - ./data/supportflow:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  redis-data:

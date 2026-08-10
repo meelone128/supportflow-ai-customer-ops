@@ -1,0 +1,18 @@
+{
+  "source_dataset": "suraj520/customer-support-ticket-dataset",
+  "source_license": "CC0-1.0",
+  "cases": 100,
+  "workflow_status_counts": {
+    "escalated": 100
+  },
+  "workflow_category_counts": {
+    "account_access": 6,
+    "product_issue": 16,
+    "refund_policy": 5,
+    "unknown": 73
+  },
+  "high_priority_cases": 50,
+  "high_priority_sent_to_human_review": 50,
+  "high_priority_review_capture": 1.0,
+  "interpretation": "Review capture compares source priority with SupportFlow's human-review decision; it is a routing audit, not a claim that source priority is ground truth for model safety."
+}
