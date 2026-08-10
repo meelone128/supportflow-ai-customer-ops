@@ -29,6 +29,8 @@ services:
         generateValue: true
       - key: SUPPORTFLOW_INTEGRATION_KEY
         generateValue: true
+      - key: SUPPORTFLOW_DEMO_PASSWORD
+        generateValue: true
 
 databases:
   - name: supportflow-db

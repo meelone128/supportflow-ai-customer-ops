@@ -64,7 +64,7 @@ The repository includes a [`render.yaml`](../render.yaml) Blueprint. Creating a 
 
 This is intentionally a **demo deployment**: it uses `SUPPORTFLOW_TASK_BACKEND=local` so a single web service can be shown without paying for a background worker. The production-shaped API + Redis + Celery worker topology remains in `docker-compose.yml`; do not describe the public demo as horizontally scaled asynchronous processing.
 
-Before sharing an operator-workbench demo, add accounts using `SUPPORTFLOW_AUTH_USERS_JSON` in Render's environment settings and keep `SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER=false`. Never set provider keys, CRM credentials, or `.dev.env` values in Git.
+The Blueprint generates a random operator password rather than using the local default. Before sharing an operator-workbench demo, either retrieve that generated value securely or add explicit accounts using `SUPPORTFLOW_AUTH_USERS_JSON` in Render's environment settings; keep `SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER=false`. Never set provider keys, CRM credentials, or `.dev.env` values in Git.
 
 ## Authentication
 
