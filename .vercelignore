@@ -1,0 +1,9 @@
+.dev.env
+.env
+.env.*
+data/
+uploads/
+supportflow/evals/kaggle_cache/
+supportflow/evals/public_corpus/
+**/__pycache__/
+**/*.pyc

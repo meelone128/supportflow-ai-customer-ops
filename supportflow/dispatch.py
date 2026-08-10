@@ -28,6 +28,16 @@ class LocalTicketDispatcher:
         ).start()
 
 
+class InlineTicketDispatcher:
+    """Serverless-demo adapter that completes a ticket in the request lifecycle."""
+
+    def __init__(self, executor: TicketExecutor):
+        self.executor = executor
+
+    def dispatch(self, ticket_id: str, recovered_from_restart: bool = False) -> None:
+        self.executor.execute(ticket_id, recovered_from_restart)
+
+
 class CeleryTicketDispatcher:
     """Production adapter that only enqueues a durable ticket ID to Redis/Celery."""
 
@@ -41,6 +51,8 @@ def create_task_dispatcher(executor: TicketExecutor) -> TicketDispatcher:
     backend = os.getenv("SUPPORTFLOW_TASK_BACKEND", "local").strip().lower()
     if backend == "local":
         return LocalTicketDispatcher(executor)
+    if backend == "inline":
+        return InlineTicketDispatcher(executor)
     if backend == "celery":
         return CeleryTicketDispatcher()
-    raise ValueError("SUPPORTFLOW_TASK_BACKEND must be either 'local' or 'celery'")
+    raise ValueError("SUPPORTFLOW_TASK_BACKEND must be 'local', 'inline', or 'celery'")

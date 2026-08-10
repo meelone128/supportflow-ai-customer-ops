@@ -23,6 +23,10 @@ python -m uvicorn supportflow.api:app --host 127.0.0.1 --port 8765
 
 完整架构、评测、部署与面试说明见 [supportflow/README.md](supportflow/README.md)。
 
+## 线上演示
+
+仓库包含 Vercel 的 FastAPI 入口，适合不绑定银行卡的个人作品集演示。该部署使用同步 `inline` 执行和临时 SQLite 文件系统，不连接真实 CRM、客服渠道、Redis/Celery 或 PostgreSQL；因此它只展示产品交互与 AI 工作流，不应描述为生产环境。
+
 ## 安全与公开仓库说明
 
 - 本仓库不包含 API Key、数据库连接串、CRM/客服渠道凭据、真实客户数据或本地 `.dev.env`。

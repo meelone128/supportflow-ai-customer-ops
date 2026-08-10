@@ -1,7 +1,7 @@
 import unittest
 from threading import Event
 
-from supportflow.dispatch import LocalTicketDispatcher
+from supportflow.dispatch import InlineTicketDispatcher, LocalTicketDispatcher
 
 
 class RecordingExecutor:
@@ -20,3 +20,9 @@ class DispatchTests(unittest.TestCase):
         LocalTicketDispatcher(executor).dispatch("T-0042", recovered_from_restart=True)
         self.assertTrue(executor.called.wait(timeout=1))
         self.assertEqual(executor.arguments, ("T-0042", True))
+
+    def test_inline_dispatcher_runs_the_shared_executor_before_returning(self):
+        executor = RecordingExecutor()
+        InlineTicketDispatcher(executor).dispatch("T-0043", recovered_from_restart=False)
+        self.assertTrue(executor.called.is_set())
+        self.assertEqual(executor.arguments, ("T-0043", False))

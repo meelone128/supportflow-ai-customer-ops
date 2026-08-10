@@ -66,6 +66,18 @@ This is intentionally a **demo deployment**: it uses `SUPPORTFLOW_TASK_BACKEND=l
 
 The Blueprint generates a random operator password rather than using the local default. Before sharing an operator-workbench demo, either retrieve that generated value securely or add explicit accounts using `SUPPORTFLOW_AUTH_USERS_JSON` in Render's environment settings; keep `SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER=false`. Never set provider keys, CRM credentials, or `.dev.env` values in Git.
 
+## Deploy a no-card portfolio demo to Vercel
+
+The repository also includes `api/index.py`, `requirements.txt`, and `vercel.json` for a Vercel FastAPI deployment. Set the following values in Vercel Project Settings rather than in Git:
+
+- `SUPPORTFLOW_TASK_BACKEND=inline`
+- `SUPPORTFLOW_DATA_DIR=/tmp/supportflow`
+- `SUPPORTFLOW_RETRIEVAL_MODE=local`
+- `SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER=false`
+- a unique `SUPPORTFLOW_JWT_SECRET`, `SUPPORTFLOW_INTEGRATION_KEY`, and `SUPPORTFLOW_DEMO_PASSWORD`
+
+`inline` is a serverless adapter: it completes a ticket inside the HTTP request instead of starting a background thread. Vercel's filesystem is temporary, so ticket history and published knowledge can reset between function instances. This is deliberately a portfolio demo deployment, not a replacement for the Docker + Redis/Celery + PostgreSQL production topology.
+
 ## Authentication
 
 Sensitive API routes accept an `Authorization: Bearer <JWT>` token. Obtain one through `POST /auth/token`; the token contains the user identity and role, and approval/feedback audit records persist both values. For a real deployment, set `SUPPORTFLOW_JWT_SECRET` to a long random secret, supply accounts through `SUPPORTFLOW_AUTH_USERS_JSON` (a username-to-password-and-role JSON object), and set `SUPPORTFLOW_ALLOW_DEMO_ROLE_HEADER=false`.
