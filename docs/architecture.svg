@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="520" viewBox="0 0 1200 520" role="img" aria-labelledby="title desc">
+  <title id="title">SupportFlow architecture</title><desc id="desc">客服工单经过多 Agent 工作流、人工审核与知识库运营闭环</desc>
+  <defs><style>.t{font-family:Arial,'Microsoft YaHei',sans-serif;fill:#102a56}.h{font-size:22px;font-weight:700}.s{font-size:16px;fill:#486487}.c{fill:#fff;stroke:#bdd0ea;stroke-width:2}.b{fill:#ecf3ff;stroke:#4e8df7;stroke-width:2}.g{fill:#eaf9f1;stroke:#29a36a;stroke-width:2}.o{fill:#fff6e3;stroke:#e39a23;stroke-width:2}.l{stroke:#7297c7;stroke-width:2.5;fill:none;marker-end:url(#a)}</style><marker id="a" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#7297c7"/></marker></defs>
+  <rect width="1200" height="520" rx="24" fill="#f6f9fd"/><text x="56" y="65" class="t h">SupportFlow · 人机协同客服工单架构</text><text x="56" y="97" class="t s">模型负责理解与草拟，人工保留业务决策与高风险处置权</text>
+  <rect x="55" y="185" width="155" height="82" rx="14" class="c"/><text x="105" y="220" class="t h">工单入口</text><text x="82" y="247" class="t s">客户 / 运营工作台</text>
+  <path d="M210 226H280" class="l"/>
+  <rect x="280" y="140" width="315" height="170" rx="18" class="b"/><text x="305" y="177" class="t h">LangGraph 多 Agent 工作流</text><text x="305" y="210" class="t s">分流 → 上下文 → 知识检索</text><text x="305" y="238" class="t s">回复草稿 → 质量检查</text><text x="305" y="275" class="t s">节点轨迹与证据可审计</text>
+  <path d="M595 226H670" class="l"/>
+  <rect x="670" y="120" width="190" height="102" rx="14" class="g"/><text x="706" y="159" class="t h">低风险路径</text><text x="700" y="188" class="t s">自动回复 / 草稿</text>
+  <rect x="670" y="290" width="190" height="102" rx="14" class="o"/><text x="711" y="329" class="t h">高风险路径</text><text x="703" y="358" class="t s">升级人工审核</text>
+  <path d="M765 222V289" class="l"/><path d="M860 171H935" class="l"/><path d="M860 341H935" class="l"/>
+  <rect x="935" y="185" width="205" height="82" rx="14" class="c"/><text x="968" y="220" class="t h">人工审核与反馈</text><text x="970" y="247" class="t s">改写 / 确认 / 升级</text>
+  <path d="M1035 267V435H440V311" class="l"/>
+  <rect x="250" y="400" width="380" height="70" rx="14" class="g"/><text x="278" y="430" class="t h">知识库运营与指标闭环</text><text x="278" y="456" class="t s">版本发布、显式重建索引、评测与运营指标</text>
+</svg>
